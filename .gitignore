@@ -1,18 +1,5 @@
-# =============================================================================
-# Environment files - SOPS encrypted
-# Unencrypted .env files are NEVER committed (encrypted versions ARE committed)
-# =============================================================================
-.env
-.env.local
-.env.*
-!.env.example
-!.env.*.example
-!.env*.sops
-
-# =============================================================================
 # Created by https://www.toptal.com/developers/gitignore/api/linux,macos,windows,microsoftoffice,libreoffice,python,node,nextjs,terraform,terragrunt
 # Edit at https://www.toptal.com/developers/gitignore?templates=linux,macos,windows,microsoftoffice,libreoffice,python,node,nextjs,terraform,terragrunt
-# =============================================================================
 
 ### LibreOffice ###
 # LibreOffice locks

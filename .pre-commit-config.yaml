@@ -12,13 +12,13 @@ repos:
     hooks:
       - id: sops-encrypt-env
         name: Encrypt .env files
-        entry: make encrypt-by-hooks
+        entry: bash -c 'make encrypt && git add .env.sops 2>/dev/null || true'
         language: system
-        files: '^\.env'
+        always_run: true
         pass_filenames: false
   # Pre-commit hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: "v4.6.0"
+    rev: "v6.0.0"
     hooks:
       - id: check-case-conflict
       - id: check-merge-conflict

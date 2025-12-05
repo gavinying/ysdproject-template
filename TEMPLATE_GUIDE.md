@@ -13,7 +13,7 @@ make setup-key      # If you have a key at $SOPS_AGE_KEY_FILE
 # OR
 make generate-key   # To create a new key
 
-# 3. Create .env files and commit - encryption is automatic!
+# 3. Create .env (plaintext stays gitignored); commit to add .env.sops
 ```
 
 ## How It Works
@@ -21,14 +21,23 @@ make generate-key   # To create a new key
 ```
 You edit:           Git commits:
 ─────────           ────────────
-.env          →     .env.sops
-.env.local    →     .env.local.sops
-.env.prod     →     .env.prod.sops
+.env           →    .env.sops
 ```
 
-- **On commit**: `.env*` files are automatically encrypted and staged
-- **On checkout/pull**: Encrypted files are automatically decrypted
-- **Unencrypted `.env` files are gitignored** - they never get committed
+- **On commit**: `.env` is automatically encrypted and staged as `.env.sops`
+- **On checkout/pull**: `.env.sops` is automatically decrypted to `.env`
+- **Plain `.env` is gitignored** so the unencrypted file never gets committed
+- Decrypt backs up any existing plaintext to `.env.bak` before overwriting
+- Need another env file? Run with `ENV_FILE=.env.stage make encrypt` and commit the resulting `.sops` file manually.
+- For local overrides, create `.env.local`, `.env.stage`, etc. to layer on top of `.env`; they stay gitignored. Encrypt per-env files with `ENV_FILE=... make encrypt` only if you need to share them.
+
+## Defaults and Tips
+
+- Default target: `.env`. Override with `ENV_FILE=...` for other files.
+- Hooks: `pre-commit` encrypts, `post-checkout`/`post-merge` decrypt.
+- Layer local envs (`.env.local`, `.env.stage`, etc.) on top of `.env`; keep them unencrypted locally, encrypt only when they must be shared.
+- Decrypt creates a safety backup (`.env.bak`) when a plaintext file already exists.
+- Smart encrypt: skips re-encrypting if the content hash is unchanged; use `FORCE=1 make encrypt` to force regeneration.
 
 ## Commands
 
@@ -52,8 +61,8 @@ You edit:           Git commits:
 
 | Command | Description |
 |---------|-------------|
-| `make encrypt` | Manually encrypt all `.env*` files |
-| `make decrypt` | Manually decrypt all `.env*.sops` files |
+| `make encrypt` | Encrypt `.env` → `.env.sops` (override with `ENV_FILE=...`) |
+| `make decrypt` | Decrypt `.env.sops` → `.env` (backs up existing to `.env.bak`; override with `ENV_FILE=...`) |
 
 ## Joining an Existing Project
 
@@ -135,4 +144,3 @@ export SOPS_AGE_KEY_FILE=~/.config/sops/age/keys.txt
 ### "Could not decrypt"
 
 Make sure you have the correct private key that matches the public key in `.sops.yaml`.
-

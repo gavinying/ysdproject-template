@@ -15,8 +15,8 @@ RESET := \033[0m
 # Default age key location
 DEFAULT_AGE_KEY_FILE := $(HOME)/.config/sops/age/keys.txt
 
-# Environment files to process (exclude .example and .sops files)
-ENV_FILES := $(filter-out %.example %.sops,$(wildcard .env .env.*))
+# Only encrypt/decrypt the main .env file (users can use .env.local etc. for overrides)
+ENV_FILE := .env
 
 #===============================================================================
 # MAIN COMMANDS
@@ -36,10 +36,6 @@ help: ## Show this help message
 	@echo ""
 	@echo "$(GREEN)Git Hooks:$(RESET)"
 	@grep -E '^(install-hooks|uninstall-hooks):.*?## ' $(MAKEFILE_LIST) | \
-		awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-20s$(RESET) %s\n", $$1, $$2}'
-	@echo ""
-	@echo "$(GREEN)Hook Targets (internal):$(RESET)"
-	@grep -E '^(encrypt-by-hooks|decrypt-by-hooks):.*?## ' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-20s$(RESET) %s\n", $$1, $$2}'
 
 .PHONY: setup
@@ -126,85 +122,40 @@ generate-key: ## Generate new age key at default location
 # ENCRYPTION / DECRYPTION
 #===============================================================================
 
+# Option: FORCE=1 to re-encrypt even if unchanged
+FORCE ?=
+
 .PHONY: encrypt
-encrypt: ## Encrypt all .env* files (creates .env*.sops)
-	@if [ -z "$(ENV_FILES)" ]; then \
-		echo "$(YELLOW)No .env files found to encrypt$(RESET)"; \
+encrypt: ## Encrypt .env file (smart mode). Use FORCE=1 to re-encrypt.
+	@if [ ! -f "$(ENV_FILE)" ]; then \
+		echo "$(YELLOW)No $(ENV_FILE) file found to encrypt$(RESET)"; \
 		exit 0; \
 	fi
-	@for file in $(ENV_FILES); do \
-		encrypted_file="$${file}.sops"; \
-		echo "$(CYAN)Encrypting $$file -> $$encrypted_file$(RESET)"; \
-		sops --encrypt --input-type dotenv --output-type dotenv "$$file" > "$$encrypted_file"; \
-	done
+	@current_hash=$$(sha256sum "$(ENV_FILE)" | cut -d' ' -f1); \
+	stored_hash=""; \
+	if [ -z "$(FORCE)" ] && [ -f "$(ENV_FILE).hash" ]; then \
+		stored_hash=$$(cat "$(ENV_FILE).hash" 2>/dev/null || echo ""); \
+	fi; \
+	if [ "$$current_hash" != "$$stored_hash" ]; then \
+		echo "$(CYAN)Encrypting $(ENV_FILE) -> $(ENV_FILE).sops$(RESET)"; \
+		sops --encrypt --input-type dotenv --output-type dotenv "$(ENV_FILE)" > "$(ENV_FILE).sops"; \
+		echo "$$current_hash" > "$(ENV_FILE).hash"; \
+	fi
 	@echo "$(GREEN)✓ Encryption complete$(RESET)"
 
 .PHONY: decrypt
-decrypt: ## Decrypt all .env*.sops files (creates .env* files)
-	@encrypted_files=$$(ls .env*.sops 2>/dev/null); \
-	if [ -z "$$encrypted_files" ]; then \
-		echo "$(YELLOW)No .env*.sops files found to decrypt$(RESET)"; \
+decrypt: ## Decrypt .env.sops file (creates .env, backs up existing to .env.bak)
+	@if [ ! -f "$(ENV_FILE).sops" ]; then \
+		echo "$(YELLOW)No $(ENV_FILE).sops file found to decrypt$(RESET)"; \
 		exit 0; \
-	fi; \
-	for encrypted_file in $$encrypted_files; do \
-		file="$${encrypted_file%.sops}"; \
-		echo "$(CYAN)Decrypting $$encrypted_file -> $$file$(RESET)"; \
-		sops --decrypt --input-type dotenv --output-type dotenv "$$encrypted_file" > "$$file"; \
-	done
+	fi
+	@if [ -f "$(ENV_FILE)" ]; then \
+		cp "$(ENV_FILE)" "$(ENV_FILE).bak"; \
+		echo "$(YELLOW)Backed up $(ENV_FILE) -> $(ENV_FILE).bak$(RESET)"; \
+	fi
+	@echo "$(CYAN)Decrypting $(ENV_FILE).sops -> $(ENV_FILE)$(RESET)"
+	@sops --decrypt --input-type dotenv --output-type dotenv "$(ENV_FILE).sops" > "$(ENV_FILE)"
 	@echo "$(GREEN)✓ Decryption complete$(RESET)"
-
-#===============================================================================
-# HOOK TARGETS (called by git hooks)
-#===============================================================================
-
-.PHONY: encrypt-by-hooks
-encrypt-by-hooks: ## For hooks: encrypt changed .env files and stage them
-	@# Find .env files that are staged for commit
-	@staged_env_files=$$(git diff --cached --name-only 2>/dev/null | grep -E '^\.env(\..*)?$$' | grep -v -E '\.(example|sops)$$' || true); \
-	if [ -n "$$staged_env_files" ]; then \
-		echo "$(CYAN)Encrypting staged .env files...$(RESET)"; \
-		for file in $$staged_env_files; do \
-			if [ -f "$$file" ]; then \
-				encrypted_file="$${file}.sops"; \
-				current_hash=$$(cat "$$file" | sha256sum | cut -d' ' -f1); \
-				if [ -f "$$encrypted_file" ]; then \
-					existing_hash=$$(sops --decrypt --input-type dotenv --output-type dotenv "$$encrypted_file" 2>/dev/null | sha256sum | cut -d' ' -f1 || echo ""); \
-				else \
-					existing_hash=""; \
-				fi; \
-				if [ "$$current_hash" != "$$existing_hash" ]; then \
-					echo "  $(CYAN)$$file -> $$encrypted_file$(RESET)"; \
-					sops --encrypt --input-type dotenv --output-type dotenv "$$file" > "$$encrypted_file"; \
-					git add "$$encrypted_file"; \
-				fi; \
-			fi; \
-		done; \
-		echo "$(GREEN)✓ Encryption complete$(RESET)"; \
-	fi
-	@# Prevent committing unencrypted .env files
-	@unencrypted=$$(git diff --cached --name-only 2>/dev/null | grep -E '^\.env(\..*)?$$' | grep -v -E '\.(example|sops)$$' || true); \
-	if [ -n "$$unencrypted" ]; then \
-		echo "$(RED)Error: Attempting to commit unencrypted .env files:$(RESET)"; \
-		echo "$$unencrypted"; \
-		echo ""; \
-		echo "These files should be in .gitignore. Run:"; \
-		echo "  $(CYAN)git reset HEAD \$$file$(RESET)"; \
-		exit 1; \
-	fi
-
-.PHONY: decrypt-by-hooks
-decrypt-by-hooks: ## For hooks: decrypt .env files after checkout/merge
-	@# Check if any .sops files changed
-	@encrypted_files=$$(ls .env*.sops 2>/dev/null); \
-	if [ -n "$$encrypted_files" ]; then \
-		for encrypted_file in $$encrypted_files; do \
-			file="$${encrypted_file%.sops}"; \
-			if [ ! -f "$$file" ]; then \
-				echo "$(CYAN)Decrypting $$encrypted_file -> $$file$(RESET)"; \
-				sops --decrypt --input-type dotenv --output-type dotenv "$$encrypted_file" > "$$file" 2>/dev/null || true; \
-			fi; \
-		done; \
-	fi
 
 #===============================================================================
 # GIT HOOKS
@@ -220,17 +171,17 @@ install-hooks: ## Install git hooks for automatic encrypt/decrypt
 	@# Pre-commit hook
 	@echo '#!/bin/bash' > .git/hooks/pre-commit
 	@echo '# Auto-generated by make install-hooks' >> .git/hooks/pre-commit
-	@echo 'make encrypt-by-hooks' >> .git/hooks/pre-commit
+	@echo 'make encrypt && git add .env.sops 2>/dev/null || true' >> .git/hooks/pre-commit
 	@chmod +x .git/hooks/pre-commit
 	@# Post-checkout hook
 	@echo '#!/bin/bash' > .git/hooks/post-checkout
 	@echo '# Auto-generated by make install-hooks' >> .git/hooks/post-checkout
-	@echo 'make decrypt-by-hooks' >> .git/hooks/post-checkout
+	@echo 'make decrypt' >> .git/hooks/post-checkout
 	@chmod +x .git/hooks/post-checkout
 	@# Post-merge hook
 	@echo '#!/bin/bash' > .git/hooks/post-merge
 	@echo '# Auto-generated by make install-hooks' >> .git/hooks/post-merge
-	@echo 'make decrypt-by-hooks' >> .git/hooks/post-merge
+	@echo 'make decrypt' >> .git/hooks/post-merge
 	@chmod +x .git/hooks/post-merge
 	@echo "$(GREEN)✓ Git hooks installed$(RESET)"
 
