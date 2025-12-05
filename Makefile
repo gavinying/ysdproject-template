@@ -24,7 +24,7 @@ ENV_FILE := .env
 
 .PHONY: help
 help: ## Show this help message
-	@echo "$(CYAN)Environment Encryption Commands$(RESET)"
+	@echo "$(CYAN)Ysd Project Commands$(RESET)"
 	@echo ""
 	@echo "$(GREEN)Setup:$(RESET)"
 	@grep -E '^(setup|install-tools|setup-key|generate-key):.*?## ' $(MAKEFILE_LIST) | \

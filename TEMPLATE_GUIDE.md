@@ -4,6 +4,15 @@ Encrypt `.env` files using SOPS + age with automatic git hooks. Zero Python depe
 
 ## Quick Start
 
+### Get the template
+
+- **New project (recommended)**: Click **Use this template** on GitHub to create a new repo from this template.
+- **Existing repo**: Pull files down without history:
+  ```bash
+  curl -L https://github.com/gavinying/ysdproject-template/archive/refs/heads/main.tar.gz \
+    | tar -xz --strip-components=1
+  ```
+
 ```bash
 # 1. Install tools (requires mise)
 make setup
