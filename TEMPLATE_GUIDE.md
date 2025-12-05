@@ -1,4 +1,4 @@
-# Environment Encryption Template
+# Ysd Project Template
 
 Encrypt `.env` files using SOPS + age with automatic git hooks. Zero Python dependency by default.
 
