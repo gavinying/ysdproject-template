@@ -1,0 +1,7 @@
+# SOPS configuration for encrypting .env files
+# Run 'make setup-key' to update the age public key below
+
+creation_rules:
+  # the private age key is located at $SOPS_AGE_KEY_FILE env specified path
+  # The age public key - run 'make setup-key' to update this
+  - age: age14vt4dpyvf82qarh3j8efjzyzqynjgu4yyu5ecgfx65nrufjjfyzqe9kuy9

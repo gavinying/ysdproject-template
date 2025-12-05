@@ -1,0 +1,30 @@
+# Pre-commit configuration
+# This file is OPTIONAL - encryption works without pre-commit installed.
+# To activate: pip install pre-commit && pre-commit install
+#
+# Benefits of activating:
+# - Encryption hooks become managed by pre-commit framework
+# - Add ecosystem hooks (black, prettier, eslint, etc.)
+
+repos:
+  # Local encryption hooks (active when pre-commit is installed)
+  - repo: local
+    hooks:
+      - id: sops-encrypt-env
+        name: Encrypt .env files
+        entry: make encrypt-by-hooks
+        language: system
+        files: '^\.env'
+        pass_filenames: false
+  # Pre-commit hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: "v4.6.0"
+    hooks:
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: check-yaml
+        args: [--unsafe]
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+        args: [--fix=lf]
