@@ -89,15 +89,41 @@ You edit:           Git commits:
 
 ## Starting a New Project
 
-1. Copy template files to your project
-2. Run:
+The recommended workflow is to use your framework's initialization tool first, then layer this template on top.
+
+1. **Initialize your project**:
    ```bash
+   # Example: Next.js
+   npx create-next-app@latest my-app
+   cd my-app
+   
+   # Example: Python/Poetry
+   poetry new my-app
+   cd my-app
+   ```
+
+2. **Copy template files**:
+   Copy the following files from this template into your new project root:
+   - `Makefile`
+   - `.sops.yaml`
+   - `.tool-versions`
+   - `.pre-commit-config.yaml` (optional)
+   - `.gitignore` (merge with your existing gitignore)
+
+3. **Setup Encryption**:
+   ```bash
+   # Install tools and hooks
    make setup
+   
+   # Generate a new key for this project
    make generate-key
    make setup-key
    ```
-3. Share the private key with your team via secure channel
-4. Create `.env` files and commit
+
+4. **Share & Commit**:
+   - Share the private key (`~/.config/sops/age/keys.txt`) with your team via a secure channel (e.g., 1Password).
+   - Create your `.env` file.
+   - Run `make encrypt` (or commit, which triggers the hook) to create `.env.sops`.
 
 ## Optional: Pre-commit Integration
 
