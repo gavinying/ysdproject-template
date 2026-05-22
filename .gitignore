@@ -487,3 +487,9 @@ $RECYCLE.BIN/
 
 # YSD Project files
 .env.bak
+.env.hash
+.env*.hash
+.env*.bak
+.dev.vars
+.wrangler/
+wrangler.jsonc.bak
