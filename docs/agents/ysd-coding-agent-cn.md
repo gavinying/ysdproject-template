@@ -8,8 +8,8 @@
 - 保持改动基于事实、范围清晰，并与当前仓库保持一致。
 - 先阅读现有代码和文档，再决定如何实现改动。
 - 优先沿用本地已有模式，而不是引入新的抽象。
-- 当任务不涉及产品特定业务逻辑时，优先遵循所用库、框架或平台的官方
-  最佳实践和文档模式，再考虑自定义变通方案。
+- 当任务不涉及产品特定业务逻辑时，优先遵循所用库、框架或平台已文档化的
+  最佳实践，再考虑自定义变通方案。
 - 将计划文档视为意图，而不是事实证明。修改行为或汇报状态前，先验证
   当前实现。
 - 将项目中立的基础能力工作与产品特定语义分开。
@@ -59,8 +59,8 @@
 - 优先为当前正在构建的产品优化，而不是为假想的复用优化。
 - 产品特定行为使用产品自己的名称和模块。
 - 只有当代码在当前仓库中真正可复用时，才使用通用命名。
-- 当某个产品功能证明值得复用时，先单独记录 backport 或抽取候选，再将
-  代码移入共享基础能力。
+- 当某个产品功能证明值得复用时，先单独记录回迁或抽取候选项，再将代码
+  移入共享基础能力。
 - 除非任务明确要求抽取，否则不要将产品特定概念泄漏到基础文档或共享模块。
 
 ## 测试与验证
@@ -81,24 +81,24 @@
 
 推荐的测试结构：
 
-- `test` 应运行不需要 headed browser、真实支付流程或生产服务的自动化单元
-  测试或 workspace 测试。
+- `test` 应运行不需要有界面浏览器、真实支付流程或生产服务的自动化单元
+  测试或工作区测试。
 - `test:smoke` 应覆盖健康检查，以及能证明应用可访问的最小 public/auth
   表面。
 - `test:integration` 应覆盖 API、Worker、backend、webhook 或契约行为，
   低于完整浏览器旅程。
-- `test:e2e` 应表示 essential 或 critical 的 headless E2E 套件，规模要足够
-  小，能在重大改动中常规运行。
-- `test:all` 或 `test:all:local` 应组合正常自动化 gate：单元/workspace
-  测试、smoke、integration 和 essential E2E。
+- `test:e2e` 应表示 essential 或 critical 的无界面 E2E 套件，规模要足够小，
+  能在重大改动中常规运行。
+- `test:all` 或 `test:all:local` 应组合正常自动化 gate：单元/工作区测试、
+  smoke、integration 和 essential E2E。
 - `test:all:staging` 应使用 staging env 配置和 staging-safe helper 行为，
-  运行 staging-safe 的远程矩阵。
+  运行 staging-safe 远程矩阵。
 - `test:e2e:regression`、`test:e2e:visual`、`test:e2e:billing`、
-  `test:e2e:backend` 以及 journey-specific E2E 脚本应作为按需套件，用于
+  `test:e2e:backend` 以及旅程特定的 E2E 脚本应作为按需套件，用于
   对应任务、发布或事故。
 - billing、visual、headed、slow-motion、破坏性或真实第三方 E2E 测试，
-  不应隐藏在默认 `test:e2e` 车道中。
-- 对重大用户可见改动，至少验证单元/workspace 测试、smoke 和 essential
+  不应隐藏在默认 `test:e2e` 通道中。
+- 对重大用户可见改动，至少验证单元/工作区测试、smoke 和 essential
   E2E。根据改动面再补充 integration 或按需套件。
 - 对基于 Playwright 的项目，优先使用命名 project，例如 `smoke`、
   `integration`、`e2e-critical`、`e2e-regression`、`e2e-visual`、
@@ -124,7 +124,7 @@
 - production 不应暴露 test helper route、demo seed、破坏性检查或广泛 E2E
   自动化，除非生产安全运行手册明确允许。
 - 生成的运行时文件应通过文档化的 `env:sync` 类命令从 env 源文件重新生成。
-- secret 应通过文档化的加密/解密和 `secret:push:<env>` 流程移动，而不是
+- secret 应通过文档化的加密、解密和 `secret:push:<env>` 流程移动，而不是
   临时复制到生成文件中。
 - 环境相关测试命令应加载对应环境的文件，例如 local 矩阵使用 local URL，
   staging 矩阵使用 staging URL。
@@ -146,18 +146,18 @@ Cloudflare 部署偏好：
 - 对 Cloudflare Workers，除非仓库明确将生成的 `wrangler` 配置和本地
   `.dev.vars` 作为源文件，否则不要手工编辑它们。
 
-## Package Script 命名
+## package.json 脚本命名
 
 跨项目优先使用稳定、可预测的 `package.json` script 名：
 
 - `dev`、`build`、`lint`、`type-check` 和 `test` 用于标准本地循环。
-- `test:smoke`、`test:integration` 和 `test:e2e` 用于自动化验证车道。
+- `test:smoke`、`test:integration` 和 `test:e2e` 用于自动化验证通道。
 - `test:all`、`test:all:local` 和 `test:all:staging` 用于组合 gate。
 - `test:e2e:<scope>` 用于可选或聚焦的浏览器套件，例如
   `test:e2e:regression`、`test:e2e:visual`、`test:e2e:billing` 和
   `test:e2e:backend`。
 - `<area>:dev`、`<area>:build`、`<area>:lint`、`<area>:type-check` 和
-  `<area>:test` 用于 backend、web、app 或 docs 等 workspace 区域。
+  `<area>:test` 用于 backend、web、app 或 docs 等工作区。
 - `db:migrate:<env>` 和 `db:seed:<env>` 用于数据库生命周期命令。
 - `env:sync`、`env:encrypt`、`env:decrypt` 和 `secret:push:<env>` 用于 env
   和 secret 流程。
@@ -171,11 +171,11 @@ Cloudflare 部署偏好：
 - 如果用多个明确脚本更清楚，就不要让一个脚本根据隐藏本地状态表现不同。
 - 如果命令有特殊前置条件，应在脚本列表附近或相关运行手册中记录。
 
-## 故障排查纪律
+## 故障排查规范
 
 - 先从可观察的失败入手诊断：命令输出、日志、网络响应、数据库状态、
   配置和近期代码变更。
-- 优先做永久修复，而不是只在本地有效的 workaround。
+- 优先做永久修复，而不是只在本地有效的变通方案。
 - 修复 bug 时，在最终交付中包含简洁的根因总结、修复内容和已执行验证。
 - 重大故障排查或事故后，在 `docs/troubleshoot/` 下创建或更新 takeaway，
   文件名使用 snake_case。

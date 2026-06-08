@@ -1,4 +1,4 @@
-# YSD Coding Agent Guide
+# YSD AI Coding Agent Guide
 
 This guide captures reusable preferences for AI coding agents across repositories.
 Keep repository-specific names, paths, scripts, URLs, and product details in each
@@ -121,7 +121,7 @@ Recommended testing structure:
 ## Environment And Infrastructure
 
 - Edit environment source files, not generated runtime files.
-- Use the repository's documented sync, encrypt, decrypt, and secret-push
+- Use the repository's documented sync, encrypt, decrypt, and secret push
   workflows.
 - Keep app code, bindings, and environment references aligned with the
   infrastructure source of truth.
@@ -145,7 +145,7 @@ Environment setup preferences:
   permits it.
 - Generated runtime files should be recreated from env sources by documented
   `env:sync`-style commands.
-- Secrets should move through documented encrypt/decrypt and
+- Secrets should move through documented encryption, decryption, and
   `secret:push:<env>` workflows, not ad hoc copy-paste into generated files.
 - Env-specific test commands should load env-specific files, for example a local
   matrix using local URLs and a staging matrix using staging URLs.
