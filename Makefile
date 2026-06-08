@@ -1,4 +1,4 @@
-# project automation
+# ysd project automation
 # Requires: sops, age
 #
 # Env files remain app-local. Make/SOPS automation is centralized at repo root.
