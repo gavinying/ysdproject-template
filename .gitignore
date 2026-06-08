@@ -486,9 +486,8 @@ $RECYCLE.BIN/
 # End of https://www.toptal.com/developers/gitignore/api/linux,macos,windows,microsoftoffice,libreoffice,python,node,nextjs,terraform,terragrunt
 
 # YSD Project files
-.env.bak
-.env.hash
-.env*.hash
+.env
+.env*.local
 .env*.bak
 .dev.vars
 .wrangler/
